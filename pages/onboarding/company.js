@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, supabaseAdmin } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
 
 export default function OnboardingCompany() {
@@ -27,7 +27,7 @@ export default function OnboardingCompany() {
     if (!session) { router.push('/login'); return }
 
     // Create workspace
-    const { data: workspace, error: wsError } = await supabaseAdmin
+    const { data: workspace, error: wsError } = await supabase
       .from('workspaces')
       .upsert({
         owner_email: session.user.email,
