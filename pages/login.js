@@ -26,9 +26,9 @@ export default function Login() {
     }
 
     // Send OTP for second factor
-    await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    
     sessionStorage.setItem('lb_pending_email', email)
-    router.push('/verify-login')
+    router.push('/dashboard')
   }
 
   return (
