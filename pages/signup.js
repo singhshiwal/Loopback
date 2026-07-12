@@ -34,7 +34,7 @@ export default function Signup() {
     }
 
     sessionStorage.setItem('lb_pending_email', email)
-    router.push('/verify')
+    router.push('/onboarding/company')
   }
 
   return (
