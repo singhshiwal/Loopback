@@ -186,7 +186,7 @@ export const globalCSS = `
   }
   .otp-input {
     flex: 1;
-    aspect-ratio: 1;
+    height: 56px;
     text-align: center;
     font-size: 1.4rem;
     font-weight: 700;
