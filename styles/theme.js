@@ -159,7 +159,7 @@ export const globalCSS = `
     margin-bottom: 32px;
   }
   .progress-step {
-    flex: 1;
+    flex: 0 0 44px;
     height: 3px;
     border-radius: 10px;
     background: var(--border2);
@@ -185,8 +185,8 @@ export const globalCSS = `
     margin-bottom: 20px;
   }
   .otp-input {
-    flex: 1;
-    height: 56px;
+    flex: 0 0 44px;
+    height: 52px; width: 44px; max-width: 44px;
     text-align: center;
     font-size: 1.4rem;
     font-weight: 700;
@@ -244,7 +244,7 @@ export const globalCSS = `
   .dash-nav-item.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-glow); }
   .dash-main {
     margin-left: 220px;
-    flex: 1;
+    flex: 0 0 44px;
     padding: 32px;
     max-width: 900px;
   }
