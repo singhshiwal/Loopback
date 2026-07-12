@@ -1,5 +1,5 @@
 import Head from 'next/head'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
@@ -11,12 +11,6 @@ export default function OnboardingCompany() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) router.push('/login')
-    })
-  }, [])
-
   async function handleNext(e) {
     e.preventDefault()
     if (!name.trim()) { setError('Company name is required.'); return }
@@ -24,21 +18,17 @@ export default function OnboardingCompany() {
     setError('')
 
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { router.push('/login'); return }
+    const ownerEmail = session?.user?.email || sessionStorage.getItem('lb_pending_email') || 'unknown'
 
-    // Create workspace
     const { data: workspace, error: wsError } = await supabase
       .from('workspaces')
-      .upsert({
-        owner_email: session.user.email,
-        name: name.trim(),
-        plan: 'free',
-      }, { onConflict: 'owner_email', ignoreDuplicates: false })
+      .insert({ owner_email: ownerEmail, name: name.trim(), plan: 'free' })
       .select()
       .single()
 
     if (wsError) {
-      setError('Failed to save. Please try again.')
+      console.error('Workspace error:', wsError)
+      setError(wsError.message || 'Failed to save. Please try again.')
       setLoading(false)
       return
     }
@@ -54,11 +44,9 @@ export default function OnboardingCompany() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
-
       <div className="auth-wrap">
         <div className="auth-card">
           <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
-
           <div className="progress-bar-wrap">
             <div className="progress-step done" />
             <div className="progress-step active" />
@@ -66,23 +54,14 @@ export default function OnboardingCompany() {
             <div className="progress-step" />
             <div className="progress-step" />
           </div>
-
           <div className="step-label">Step 1 of 4</div>
           <h1 className="auth-title">Set up your workspace</h1>
           <p className="auth-sub">Tell us about your company so we can personalise your digest.</p>
-
           {error && <div className="msg msg-error">{error}</div>}
-
           <form onSubmit={handleNext}>
             <div className="field">
               <label>Company name</label>
-              <input
-                type="text"
-                placeholder="Acme Inc."
-                value={name}
-                onChange={e => setName(e.target.value)}
-                autoFocus
-              />
+              <input type="text" placeholder="Acme Inc." value={name} onChange={e => setName(e.target.value)} autoFocus />
             </div>
             <div className="field">
               <label>Team size</label>
