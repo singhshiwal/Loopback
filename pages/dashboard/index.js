@@ -157,6 +157,7 @@ export default function Dashboard() {
           </div>
           <a href="/dashboard" className="dash-nav-item active">📊 &nbsp;Digests</a>
           <a href="/dashboard/settings" className="dash-nav-item">⚙️ &nbsp;Settings</a>
+          <a href="/dashboard/billing" className="dash-nav-item">💳 &nbsp;Billing</a>
           <div style={{ flex:1 }} />
           <div style={{ padding:'16px 20px', borderTop:'1px solid var(--border)' }}>
             <div style={{ fontSize:'.72rem', color:'var(--text3)', marginBottom:'8px', wordBreak:'break-all' }}>{userEmail}</div>

@@ -58,6 +58,7 @@ export default function Settings() {
           </div>
           <a href="/dashboard" className="dash-nav-item">📊 &nbsp;Digests</a>
           <a href="/dashboard/settings" className="dash-nav-item active">⚙️ &nbsp;Settings</a>
+          <a href="/dashboard/billing" className="dash-nav-item">💳 &nbsp;Billing</a>
         </div>
         <div className="dash-main">
           <div className="dash-header">
