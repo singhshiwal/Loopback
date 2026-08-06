@@ -39,9 +39,14 @@ export default function Dashboard() {
     setRunning(true)
     setRunStatus(null)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push('/login'); return }
       const res = await fetch('/api/digest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-loopback-secret': 'loopback-mvp-secret' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ workspace_id: workspace.id })
       })
       const data = await res.json()

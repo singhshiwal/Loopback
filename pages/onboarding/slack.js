@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, supabaseAdmin } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
 
 export default function OnboardingSlack() {
@@ -29,7 +29,7 @@ export default function OnboardingSlack() {
     setLoading(true)
 
     if (webhookUrl) {
-      const { error: updateError } = await supabaseAdmin
+      const { error: updateError } = await supabase
         .from('workspaces')
         .update({ slack_webhook_url: webhookUrl.trim() })
         .eq('id', workspaceId)

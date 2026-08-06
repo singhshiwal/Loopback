@@ -2,10 +2,30 @@ import { supabaseAdmin } from '../../lib/supabase'
 import { synthesiseTickets } from '../../lib/claude'
 import { sendDigestEmail } from '../../lib/resend'
 
-// Simple auth check — replace with proper auth in V1.1
-function isAuthorised(req) {
+// Cron calls this with a shared secret. Manual "Run digest now" clicks
+// authenticate with the user's own Supabase session instead.
+function isCronRequest(req) {
   const secret = req.headers['x-loopback-secret']
-  return secret === process.env.CRON_SECRET
+  return Boolean(process.env.CRON_SECRET) && secret === process.env.CRON_SECRET
+}
+
+// Verifies the request's bearer token belongs to a real logged-in user,
+// and that the user owns the workspace they're requesting a digest for.
+async function isAuthorisedUser(req, workspace_id) {
+  const authHeader = req.headers['authorization'] || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
+  if (!token) return false
+
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
+  if (error || !user) return false
+
+  const { data: workspace } = await supabaseAdmin
+    .from('workspaces')
+    .select('id, owner_email')
+    .eq('id', workspace_id)
+    .single()
+
+  return Boolean(workspace) && workspace.owner_email === user.email
 }
 
 export default async function handler(req, res) {
@@ -13,15 +33,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  // Protect this endpoint — called by cron or manually
-  if (!isAuthorised(req)) {
-    return res.status(401).json({ error: 'Unauthorised' })
-  }
-
   const { workspace_id } = req.body
 
   if (!workspace_id) {
     return res.status(400).json({ error: 'workspace_id required' })
+  }
+
+  // Protect this endpoint — allow the cron job (shared secret) or the
+  // workspace owner's own logged-in session, nothing else.
+  const authorised = isCronRequest(req) || await isAuthorisedUser(req, workspace_id)
+  if (!authorised) {
+    return res.status(401).json({ error: 'Unauthorised' })
   }
 
   try {

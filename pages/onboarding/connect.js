@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, supabaseAdmin } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
 
 const TOOLS = [
@@ -45,7 +45,7 @@ export default function OnboardingConnect() {
       ? { freshdesk_domain: domain.trim().replace('.freshdesk.com', ''), freshdesk_api_key: apiKey.trim() }
       : {}
 
-    const { error: updateError } = await supabaseAdmin
+    const { error: updateError } = await supabase
       .from('workspaces')
       .update(updates)
       .eq('id', workspaceId)

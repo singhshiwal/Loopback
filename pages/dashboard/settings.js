@@ -1,7 +1,7 @@
 import Head from 'next/head'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { supabase, supabaseAdmin } from '../../lib/supabase'
+import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
 
 export default function Settings() {
@@ -18,7 +18,7 @@ export default function Settings() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const { data: ws } = await supabaseAdmin
+      const { data: ws } = await supabase
         .from('workspaces').select('*').eq('owner_email', session.user.email).single()
       if (ws) {
         setWorkspace(ws)
@@ -36,7 +36,7 @@ export default function Settings() {
     setSaved(false)
     const updates = { freshdesk_domain: domain.trim(), slack_webhook_url: slack.trim() }
     if (apiKey.trim()) updates.freshdesk_api_key = apiKey.trim()
-    const { error: err } = await supabaseAdmin.from('workspaces').update(updates).eq('id', workspace.id)
+    const { error: err } = await supabase.from('workspaces').update(updates).eq('id', workspace.id)
     if (err) { setError('Failed to save. Please try again.'); setLoading(false); return }
     setSaved(true)
     setLoading(false)
