@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../../lib/supabase'
-import { synthesiseTickets } from '../../lib/claude'
+import { synthesiseTickets } from '../../lib/ai'
 import { sendDigestEmail } from '../../lib/resend'
 
 // Cron calls this with a shared secret. Manual "Run digest now" clicks
