@@ -7,6 +7,8 @@ import { globalCSS } from '../../styles/theme'
 export default function Dashboard() {
   const router = useRouter()
   const [workspace, setWorkspace] = useState(null)
+  const [myWorkspaces, setMyWorkspaces] = useState([]) // Step 7: workspaces this user belongs to
+  const [role, setRole] = useState(null) // Step 8: 'owner' | 'member' | 'user'
   const [digests, setDigests] = useState([])
   const [expanded, setExpanded] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -16,23 +18,51 @@ export default function Dashboard() {
   const [csvFile, setCsvFile] = useState(null)
   const [uploading, setUploading] = useState(false)
 
+  async function loadWorkspace(ws, myRole) {
+    setWorkspace(ws)
+    setRole(myRole)
+    sessionStorage.setItem('lb_workspace_id', ws.id)
+    const { data: digs } = await supabase
+      .from('digests').select('*').eq('workspace_id', ws.id)
+      .order('created_at', { ascending: false }).limit(8)
+    setDigests(digs || [])
+  }
+
   useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
       setUserEmail(session.user.email)
-      const { data: ws } = await supabase
-        .from('workspaces').select('*').eq('owner_email', session.user.email).single()
-      if (!ws) { router.push('/onboarding/company'); return }
-      setWorkspace(ws)
-      const { data: digs } = await supabase
-        .from('digests').select('*').eq('workspace_id', ws.id)
-        .order('created_at', { ascending: false }).limit(8)
-      setDigests(digs || [])
+
+      // Step 7/8: every workspace this user belongs to, with their role in each
+      const { data: memberships } = await supabase
+        .from('workspace_members')
+        .select('role, workspace_id, workspaces(*)')
+        .eq('user_id', session.user.id)
+        .not('accepted_at', 'is', null)
+
+      const workspaces = (memberships || [])
+        .filter(m => m.workspaces)
+        .map(m => ({ ...m.workspaces, _role: m.role }))
+
+      if (workspaces.length === 0) { router.push('/onboarding/company'); return }
+
+      setMyWorkspaces(workspaces)
+      const savedId = sessionStorage.getItem('lb_workspace_id')
+      const active = workspaces.find(w => w.id === savedId) || workspaces[0]
+      await loadWorkspace(active, active._role)
       setLoading(false)
     }
     load()
   }, [])
+
+  async function handleSwitchWorkspace(id) {
+    const ws = myWorkspaces.find(w => w.id === id)
+    if (!ws) return
+    setLoading(true)
+    await loadWorkspace(ws, ws._role)
+    setLoading(false)
+  }
 
   async function handleRunDigest() {
     if (!workspace) return
@@ -161,10 +191,27 @@ export default function Dashboard() {
             Loopback
           </div>
           <a href="/dashboard" className="dash-nav-item active">📊 &nbsp;Digests</a>
+          <a href="/dashboard/tickets" className="dash-nav-item">🎫 &nbsp;Tickets</a>
+          {role === 'owner' && <a href="/dashboard/members" className="dash-nav-item">👥 &nbsp;Members</a>}
           <a href="/dashboard/settings" className="dash-nav-item">⚙️ &nbsp;Settings</a>
           <a href="/dashboard/billing" className="dash-nav-item">💳 &nbsp;Billing</a>
           <div style={{ flex:1 }} />
+          {myWorkspaces.length > 1 && (
+            <div style={{ padding:'0 20px 12px' }}>
+              <label style={{ fontSize:'.68rem', color:'var(--text3)', fontFamily:'var(--mono)', textTransform:'uppercase', letterSpacing:'.06em' }}>Workspace</label>
+              <select
+                value={workspace?.id || ''}
+                onChange={e => handleSwitchWorkspace(e.target.value)}
+                style={{ width:'100%', marginTop:'6px', padding:'8px 10px', background:'var(--surface)', border:'1px solid var(--border2)', borderRadius:'6px', color:'var(--text)', fontSize:'.8rem' }}
+              >
+                {myWorkspaces.map(w => (
+                  <option key={w.id} value={w.id}>{w.name} {w._role !== 'owner' ? `(${w._role})` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div style={{ padding:'16px 20px', borderTop:'1px solid var(--border)' }}>
+            <div style={{ fontSize:'.68rem', color:'var(--text3)', marginBottom:'2px', textTransform:'uppercase', fontFamily:'var(--mono)' }}>{role}</div>
             <div style={{ fontSize:'.72rem', color:'var(--text3)', marginBottom:'8px', wordBreak:'break-all' }}>{userEmail}</div>
             <div onClick={async () => { await supabase.auth.signOut(); router.push('/login') }}
               style={{ fontSize:'.78rem', color:'var(--text3)', cursor:'pointer' }}>Sign out</div>
@@ -186,32 +233,43 @@ export default function Dashboard() {
             <div className="stat-card"><div className="stat-label">Slack</div><div className="stat-val" style={{fontSize:'1rem'}}>{workspace?.slack_webhook_url ? '🟢 Connected' : '⚪ Not connected'}</div></div>
           </div>
 
-          {/* Action bar */}
-          <div className="action-bar">
-            <div style={{width:'100%'}}>
-              <div className="action-title">Generate digest</div>
-              <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
-                <button className="run-btn" onClick={handleRunDigest} disabled={running}>
-                  {running ? <><div className="spinner"></div>&nbsp;Running AI synthesis...</> : '⚡ Run digest now'}
-                </button>
-                <span className="divider-or">or upload tickets manually</span>
-                <div className="csv-wrap">
-                  <label className="csv-label">
-                    📄 {csvFile ? csvFile.name : 'Choose CSV file'}
-                    <input type="file" accept=".csv" style={{display:'none'}} onChange={e => setCsvFile(e.target.files[0])} />
-                  </label>
-                  {csvFile && (
-                    <button className="csv-upload-btn" onClick={handleCsvUpload} disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload & ingest'}
-                    </button>
-                  )}
-                </div>
+          {/* Action bar — Step 8: Owner/Member can ingest and run digests; User is view-only */}
+          {role === 'user' ? (
+            <div className="action-bar">
+              <div style={{width:'100%'}}>
+                <div className="action-title">View-only access</div>
+                <p style={{fontSize:'.8rem', color:'var(--text2)', lineHeight:1.6, margin:0}}>
+                  Your role on this workspace is <strong>User</strong>. You can view digest history below, but only an Owner or Member can run digests or upload tickets.
+                </p>
               </div>
-              <p style={{fontSize:'.73rem', color:'var(--text3)', marginTop:'10px', lineHeight:1.5}}>
-                Run digest pulls from your connected Freshdesk. CSV upload accepts tickets from any support platform — export as CSV and upload here.
-              </p>
             </div>
-          </div>
+          ) : (
+            <div className="action-bar">
+              <div style={{width:'100%'}}>
+                <div className="action-title">Generate digest</div>
+                <div style={{display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+                  <button className="run-btn" onClick={handleRunDigest} disabled={running}>
+                    {running ? <><div className="spinner"></div>&nbsp;Running AI synthesis...</> : '⚡ Run digest now'}
+                  </button>
+                  <span className="divider-or">or upload tickets manually</span>
+                  <div className="csv-wrap">
+                    <label className="csv-label">
+                      📄 {csvFile ? csvFile.name : 'Choose CSV file'}
+                      <input type="file" accept=".csv" style={{display:'none'}} onChange={e => setCsvFile(e.target.files[0])} />
+                    </label>
+                    {csvFile && (
+                      <button className="csv-upload-btn" onClick={handleCsvUpload} disabled={uploading}>
+                        {uploading ? 'Uploading...' : 'Upload & ingest'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p style={{fontSize:'.73rem', color:'var(--text3)', marginTop:'10px', lineHeight:1.5}}>
+                  Run digest pulls from your connected Freshdesk. CSV upload accepts tickets from any support platform — export as CSV and upload here.
+                </p>
+              </div>
+            </div>
+          )}
 
           {runStatus && (
             <div className={`status-msg ${runStatus.ok ? 'status-ok' : 'status-err'}`}>
