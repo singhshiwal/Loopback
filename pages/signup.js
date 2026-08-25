@@ -18,7 +18,7 @@ export default function Signup() {
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     setLoading(true)
 
-    const { error: signupError } = await supabase.auth.signUp({
+    const { data: signupData, error: signupError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -34,6 +34,31 @@ export default function Signup() {
     }
 
     sessionStorage.setItem('lb_pending_email', email)
+
+    // Step 4: no self-serve signup into a workspace. If an Owner already
+    // invited this email, link it to the new auth user and skip straight to
+    // the dashboard instead of "create a workspace" onboarding.
+    const userId = signupData?.user?.id
+    if (userId) {
+      const { data: pendingInvite } = await supabase
+        .from('workspace_members')
+        .select('id')
+        .eq('email', email.toLowerCase().trim())
+        .is('user_id', null)
+        .limit(1)
+        .maybeSingle()
+
+      if (pendingInvite) {
+        await supabase
+          .from('workspace_members')
+          .update({ user_id: userId, accepted_at: new Date().toISOString() })
+          .eq('id', pendingInvite.id)
+
+        router.push('/dashboard')
+        return
+      }
+    }
+
     router.push('/onboarding/company')
   }
 

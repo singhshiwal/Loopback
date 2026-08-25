@@ -19,6 +19,7 @@ export default function OnboardingCompany() {
 
     const { data: { session } } = await supabase.auth.getSession()
     const ownerEmail = session?.user?.email || sessionStorage.getItem('lb_pending_email') || 'unknown'
+    const userId = session?.user?.id
 
     const { data: workspace, error: wsError } = await supabase
       .from('workspaces')
@@ -29,6 +30,26 @@ export default function OnboardingCompany() {
     if (wsError) {
       console.error('Workspace error:', wsError)
       setError(wsError.message || 'Failed to save. Please try again.')
+      setLoading(false)
+      return
+    }
+
+    // Step 3: the person creating the workspace becomes its Owner.
+    // A single Owner can repeat this flow to create multiple workspaces —
+    // each gets its own membership row, so ownership isn't exclusive.
+    const { error: memberError } = await supabase
+      .from('workspace_members')
+      .insert({
+        workspace_id: workspace.id,
+        user_id: userId,
+        email: ownerEmail,
+        role: 'owner',
+        accepted_at: new Date().toISOString(),
+      })
+
+    if (memberError) {
+      console.error('Owner membership error:', memberError)
+      setError(memberError.message || 'Failed to set up ownership. Please try again.')
       setLoading(false)
       return
     }
