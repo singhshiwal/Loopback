@@ -18,8 +18,34 @@ export default function Settings() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const { data: ws } = await supabase
-        .from('workspaces').select('*').eq('owner_email', session.user.email).single()
+
+      // Same active-workspace pattern as dashboard/tickets/billing — an
+      // owner_email lookup breaks once an Owner has more than one workspace.
+      let workspaceId = sessionStorage.getItem('lb_workspace_id')
+      let ws = null
+
+      if (workspaceId) {
+        const { data } = await supabase
+          .from('workspace_members')
+          .select('workspaces(*)')
+          .eq('user_id', session.user.id)
+          .eq('workspace_id', workspaceId)
+          .maybeSingle()
+        ws = data?.workspaces || null
+      }
+
+      if (!ws) {
+        const { data } = await supabase
+          .from('workspace_members')
+          .select('workspace_id, workspaces(*)')
+          .eq('user_id', session.user.id)
+          .not('accepted_at', 'is', null)
+          .limit(1)
+          .maybeSingle()
+        ws = data?.workspaces || null
+        if (data) sessionStorage.setItem('lb_workspace_id', data.workspace_id)
+      }
+
       if (ws) {
         setWorkspace(ws)
         setDomain(ws.freshdesk_domain || '')

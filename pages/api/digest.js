@@ -10,7 +10,8 @@ function isCronRequest(req) {
 }
 
 // Verifies the request's bearer token belongs to a real logged-in user,
-// and that the user owns the workspace they're requesting a digest for.
+// and that the user is an Owner or Member of the workspace they're
+// requesting a digest for (Users can't trigger ingestion, per tickets_insert RLS).
 async function isAuthorisedUser(req, workspace_id) {
   const authHeader = req.headers['authorization'] || ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
@@ -19,13 +20,14 @@ async function isAuthorisedUser(req, workspace_id) {
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
   if (error || !user) return false
 
-  const { data: workspace } = await supabaseAdmin
-    .from('workspaces')
-    .select('id, owner_email')
-    .eq('id', workspace_id)
+  const { data: membership } = await supabaseAdmin
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', workspace_id)
+    .eq('user_id', user.id)
     .single()
 
-  return Boolean(workspace) && workspace.owner_email === user.email
+  return Boolean(membership) && ['owner', 'member'].includes(membership.role)
 }
 
 export default async function handler(req, res) {

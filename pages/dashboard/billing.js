@@ -17,10 +17,39 @@ export default function Billing() {
   async function load() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { router.push('/login'); return }
-    const { data: ws } = await supabase
-      .from('workspaces').select('*').eq('owner_email', session.user.email).single()
-    if (!ws) { router.push('/onboarding/company'); return }
-    setWorkspace(ws)
+
+    // Use the active workspace (same pattern as dashboard/tickets), not a
+    // owner_email lookup — an Owner can now have more than one workspace,
+    // which broke .single() here.
+    let workspaceId = sessionStorage.getItem('lb_workspace_id')
+    let membership = null
+
+    if (workspaceId) {
+      const { data } = await supabase
+        .from('workspace_members')
+        .select('role, workspaces(*)')
+        .eq('user_id', session.user.id)
+        .eq('workspace_id', workspaceId)
+        .maybeSingle()
+      membership = data
+    }
+
+    // Fall back to any workspace this user belongs to, in case sessionStorage
+    // was empty (e.g. billing opened in a fresh tab) or pointed at a stale id.
+    if (!membership) {
+      const { data } = await supabase
+        .from('workspace_members')
+        .select('role, workspace_id, workspaces(*)')
+        .eq('user_id', session.user.id)
+        .not('accepted_at', 'is', null)
+        .limit(1)
+        .maybeSingle()
+      membership = data
+      if (membership) sessionStorage.setItem('lb_workspace_id', membership.workspace_id)
+    }
+
+    if (!membership || !membership.workspaces) { router.push('/onboarding/company'); return }
+    setWorkspace(membership.workspaces)
     setLoading(false)
   }
 
