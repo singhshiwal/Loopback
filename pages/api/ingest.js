@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../../lib/supabase'
+import { getPlan } from '../../lib/plans'
 
 // Simple auth check
 function isAuthorised(req) {
@@ -62,7 +63,7 @@ export default async function handler(req, res) {
     // 1. Fetch workspace
     const { data: workspace, error: wsError } = await supabaseAdmin
       .from('workspaces')
-      .select('freshdesk_domain, freshdesk_api_key')
+      .select('freshdesk_domain, freshdesk_api_key, plan')
       .eq('id', workspace_id)
       .single()
 
@@ -74,19 +75,33 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Freshdesk not connected for this workspace' })
     }
 
+    // Plan gates: never fetch further back or more tickets than the plan allows,
+    // regardless of what the caller requests.
+    const plan = getPlan(workspace.plan)
+
+    if (!plan.sourcesAllowed.includes('freshdesk')) {
+      return res.status(403).json({ error: `Freshdesk sync isn't available on the ${plan.name} plan. Upgrade to Starter or above.` })
+    }
+
+    const effectiveDaysBack = Math.min(days_back, plan.ticketWindowDays)
+
     // 2. Fetch from Freshdesk
     const freshdeskTickets = await fetchFreshdeskTickets(
       workspace.freshdesk_domain,
       workspace.freshdesk_api_key,
-      days_back
+      effectiveDaysBack
     )
 
     if (!freshdeskTickets || freshdeskTickets.length === 0) {
       return res.status(200).json({ message: 'No tickets found in Freshdesk', ingested: 0 })
     }
 
+    // Cap to the plan's per-run ticket limit. Freshdesk already returns
+    // newest-first (order_type=desc), so this keeps the most recent tickets.
+    const cappedTickets = freshdeskTickets.slice(0, plan.ticketsPerRun)
+
     // 3. Map to Loopback schema
-    const ticketsToInsert = freshdeskTickets.map(t => ({
+    const ticketsToInsert = cappedTickets.map(t => ({
       workspace_id,
       external_id: String(t.id),
       subject: t.subject || '',

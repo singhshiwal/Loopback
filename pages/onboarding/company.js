@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
+import { getPlan } from '../../lib/plans'
 
 export default function OnboardingCompany() {
   const router = useRouter()
@@ -20,6 +21,31 @@ export default function OnboardingCompany() {
     const { data: { session } } = await supabase.auth.getSession()
     const ownerEmail = session?.user?.email || sessionStorage.getItem('lb_pending_email') || 'unknown'
     const userId = session?.user?.id
+
+    // Plan gate: cap how many workspaces one Owner can create (Free/Starter: 1,
+    // Pro/Team: 3). Plan lives on the workspace row, not a per-account record,
+    // so use the most permissive plan across the Owner's existing workspaces —
+    // upgrading any one of them raises the cap for creating the next one.
+    if (userId) {
+      const { data: existing } = await supabase
+        .from('workspace_members')
+        .select('workspaces(plan)')
+        .eq('user_id', userId)
+        .eq('role', 'owner')
+        .not('accepted_at', 'is', null)
+
+      const ownedCount = existing?.length || 0
+      const bestCap = (existing || []).reduce((max, m) => {
+        const cap = getPlan(m.workspaces?.plan).maxWorkspaces
+        return Math.max(max, cap)
+      }, getPlan('free').maxWorkspaces)
+
+      if (ownedCount >= bestCap) {
+        setError(`Your plan allows up to ${bestCap} workspace${bestCap === 1 ? '' : 's'}. Upgrade a workspace to Pro or Team to create another.`)
+        setLoading(false)
+        return
+      }
+    }
 
     const { data: workspace, error: wsError } = await supabase
       .from('workspaces')

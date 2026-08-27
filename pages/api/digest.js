@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '../../lib/supabase'
 import { synthesiseTickets } from '../../lib/ai'
 import { sendDigestEmail } from '../../lib/resend'
+import { getPlan } from '../../lib/plans'
 
 // Cron calls this with a shared secret. Manual "Run digest now" clicks
 // authenticate with the user's own Supabase session instead.
@@ -60,30 +61,34 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Workspace not found' })
     }
 
-    // 2. Fetch this week's tickets
-    const weekAgo = new Date()
-    weekAgo.setDate(weekAgo.getDate() - 7)
+    // 2. Fetch this week's tickets, bounded by the workspace's plan window
+    const plan = getPlan(workspace.plan)
+    const windowStart = new Date()
+    windowStart.setDate(windowStart.getDate() - plan.ticketWindowDays)
 
-    const { data: tickets, error: ticketError } = await supabaseAdmin
+    const { data: windowTickets, error: ticketError } = await supabaseAdmin
       .from('tickets')
       .select('*')
       .eq('workspace_id', workspace_id)
-      .gte('ingested_at', weekAgo.toISOString())
+      .gte('ingested_at', windowStart.toISOString())
       .order('ingested_at', { ascending: false })
 
     if (ticketError) {
       return res.status(500).json({ error: 'Failed to fetch tickets' })
     }
 
-    if (!tickets || tickets.length === 0) {
+    if (!windowTickets || windowTickets.length === 0) {
       return res.status(200).json({ message: 'No tickets this week — digest skipped', ticket_count: 0 })
     }
+
+    // Cap the synthesis run itself to the plan's per-run limit, most recent first.
+    const tickets = windowTickets.slice(0, plan.ticketsPerRun)
 
     // 3. Run AI synthesis
     const { result, usage, promptVersion } = await synthesiseTickets(tickets)
 
     // 4. Store digest in Supabase
-    const weekOf = weekAgo.toISOString().split('T')[0]
+    const weekOf = windowStart.toISOString().split('T')[0]
     const { data: digest, error: digestError } = await supabaseAdmin
       .from('digests')
       .insert({
@@ -124,9 +129,11 @@ export default async function handler(req, res) {
       }
     }
 
-    // 6. Send Slack digest
+    // 6. Send Slack digest — gated by plan (Free is email-only)
     let slackStatus = 'skipped'
-    if (workspace.slack_webhook_url) {
+    if (!plan.channels.includes('slack')) {
+      slackStatus = 'not_on_plan'
+    } else if (workspace.slack_webhook_url) {
       try {
         const slackPayload = {
           blocks: [

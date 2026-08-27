@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { supabaseAdmin } from '../../lib/supabase'
 import { sendInviteEmail } from '../../lib/resend'
+import { getPlan } from '../../lib/plans'
 
 const SUPABASE_URL = 'https://fstymtartfimrlndgkhu.supabase.co'
 const ANON_KEY = 'sb_publishable_6I4nQOTb1zNV5vwRMWH5jw_adgpO803'
@@ -45,9 +46,23 @@ export default async function handler(req, res) {
 
   const { data: workspace } = await supabaseAdmin
     .from('workspaces')
-    .select('name')
+    .select('name, plan')
     .eq('id', workspace_id)
     .single()
+
+  // Seat cap: count everyone already on this workspace (accepted or still
+  // pending) plus the Owner themself, and compare to the plan's max seats.
+  const plan = getPlan(workspace?.plan)
+  const { count: seatCount } = await supabaseAdmin
+    .from('workspace_members')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', workspace_id)
+
+  if ((seatCount || 0) >= plan.maxSeats) {
+    return res.status(403).json({
+      error: `The ${plan.name} plan allows up to ${plan.maxSeats} seat${plan.maxSeats === 1 ? '' : 's'} on this workspace. Upgrade to Team for up to 5 seats.`,
+    })
+  }
 
   const { data: inserted, error: insertError } = await supabaseAdmin
     .from('workspace_members')

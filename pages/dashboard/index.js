@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabase'
 import { globalCSS } from '../../styles/theme'
+import { getPlan } from '../../lib/plans'
 
 export default function Dashboard() {
   const router = useRouter()
@@ -22,9 +23,13 @@ export default function Dashboard() {
     setWorkspace(ws)
     setRole(myRole)
     sessionStorage.setItem('lb_workspace_id', ws.id)
+    const plan = getPlan(ws.plan)
+    // Free/Starter have no history dashboard per the pricing page — still show
+    // the single latest digest (that's the core product), just not a history list.
+    const historyLimit = plan.digestHistoryWeeks > 0 ? plan.digestHistoryWeeks : 1
     const { data: digs } = await supabase
       .from('digests').select('*').eq('workspace_id', ws.id)
-      .order('created_at', { ascending: false }).limit(8)
+      .order('created_at', { ascending: false }).limit(historyLimit)
     setDigests(digs || [])
   }
 
@@ -82,9 +87,11 @@ export default function Dashboard() {
       const data = await res.json()
       if (data.success) {
         setRunStatus({ ok: true, msg: `Digest generated from ${data.ticket_count} tickets. Check your Slack and email.` })
+        const plan = getPlan(workspace.plan)
+        const historyLimit = plan.digestHistoryWeeks > 0 ? plan.digestHistoryWeeks : 1
         const { data: digs } = await supabase
           .from('digests').select('*').eq('workspace_id', workspace.id)
-          .order('created_at', { ascending: false }).limit(8)
+          .order('created_at', { ascending: false }).limit(historyLimit)
         setDigests(digs || [])
       } else {
         setRunStatus({ ok: false, msg: data.message || data.error || 'Something went wrong.' })
@@ -130,10 +137,21 @@ export default function Dashboard() {
         return
       }
 
-      const { error } = await supabase.from('tickets').insert(tickets)
+      // Plan gate: cap to this workspace's per-run ticket limit rather than
+      // rejecting the whole upload, so a bigger CSV still ingests up to the cap.
+      const plan = getPlan(workspace.plan)
+      const wasTruncated = tickets.length > plan.ticketsPerRun
+      const cappedTickets = tickets.slice(0, plan.ticketsPerRun)
+
+      const { error } = await supabase.from('tickets').insert(cappedTickets)
       if (error) throw new Error(error.message)
 
-      setRunStatus({ ok: true, msg: `${tickets.length} tickets uploaded. Click Run digest now to generate insights.` })
+      setRunStatus({
+        ok: true,
+        msg: wasTruncated
+          ? `${cappedTickets.length} of ${tickets.length} tickets uploaded (${plan.name} plan caps uploads at ${plan.ticketsPerRun}/run). Click Run digest now to generate insights.`
+          : `${cappedTickets.length} tickets uploaded. Click Run digest now to generate insights.`,
+      })
       setCsvFile(null)
     } catch (e) {
       setRunStatus({ ok: false, msg: e.message })
@@ -174,6 +192,8 @@ export default function Dashboard() {
     @keyframes spin { to { transform:rotate(360deg); } }
     .spinner { display:inline-block; width:13px; height:13px; border:2px solid rgba(8,9,15,.3); border-top-color:#08090F; border-radius:50%; animation:spin .7s linear infinite; }
   `
+
+  const plan = getPlan(workspace?.plan)
 
   return (
     <>
@@ -277,11 +297,24 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Ticket volume trend chart — Pro/Team only (F-09 in the PRD) */}
+          {plan.trendChart && (
+            <TicketTrendChart digests={digests} />
+          )}
+
           {/* Digest history */}
           <div style={{ marginBottom:'12px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <h2 style={{ fontSize:'.8rem', fontWeight:600, color:'var(--text3)', fontFamily:'var(--mono)', textTransform:'uppercase', letterSpacing:'.06em' }}>Digest History</h2>
-            <span style={{ fontSize:'.72rem', color:'var(--text3)', fontFamily:'var(--mono)' }}>{digests.length} digests</span>
+            <span style={{ fontSize:'.72rem', color:'var(--text3)', fontFamily:'var(--mono)' }}>
+              {plan.digestHistoryWeeks > 0 ? `${digests.length} of last ${plan.digestHistoryWeeks} weeks` : digests.length + ' digest'}
+            </span>
           </div>
+
+          {plan.digestHistoryWeeks === 0 && digests.length > 0 && (
+            <div style={{ marginBottom:16, padding:'10px 14px', borderRadius:8, background:'rgba(59,126,255,.08)', border:'1px solid rgba(59,126,255,.25)', fontSize:'.78rem', color:'var(--text2)' }}>
+              You're seeing your latest digest only. Digest history goes back 8 weeks on the Pro plan.
+            </div>
+          )}
 
           {digests.length === 0 ? (
             <div className="empty-state">
@@ -328,5 +361,42 @@ export default function Dashboard() {
         </div>
       </div>
     </>
+  )
+}
+
+// Ticket volume trend chart (F-09, Pro/Team plans only).
+// Built from digest history already loaded — each digest records the
+// ticket_count for its week, so no extra query is needed.
+function TicketTrendChart({ digests }) {
+  if (!digests || digests.length < 2) return null
+
+  const points = [...digests].reverse() // oldest to newest, left to right
+  const max = Math.max(...points.map(d => d.ticket_count || 0), 1)
+  const W = 640, H = 120, padX = 10, padY = 16
+  const step = (W - padX * 2) / Math.max(points.length - 1, 1)
+
+  const coords = points.map((d, i) => {
+    const x = padX + i * step
+    const y = H - padY - ((d.ticket_count || 0) / max) * (H - padY * 2)
+    return { x, y, count: d.ticket_count || 0, week: d.week_of }
+  })
+
+  const path = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`).join(' ')
+
+  return (
+    <div style={{ marginBottom:24, padding:'18px 20px', background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12 }}>
+      <div style={{ fontSize:'.8rem', fontWeight:600, color:'var(--text3)', fontFamily:'var(--mono)', textTransform:'uppercase', letterSpacing:'.06em', marginBottom:12 }}>
+        Ticket Volume Trend
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:'visible' }}>
+        <path d={path} fill="none" stroke="var(--blue, #3B7EFF)" strokeWidth="2" />
+        {coords.map((c, i) => (
+          <g key={i}>
+            <circle cx={c.x} cy={c.y} r="3" fill="var(--blue, #3B7EFF)" />
+            <title>{`${c.week}: ${c.count} tickets`}</title>
+          </g>
+        ))}
+      </svg>
+    </div>
   )
 }
