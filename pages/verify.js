@@ -59,7 +59,10 @@ export default function Verify() {
     }
 
     sessionStorage.removeItem('lb_pending_email')
-    router.push('/onboarding/company')
+    // Dashboard links any pending invite, and sends brand-new owners on to
+    // onboarding itself. Going straight to onboarding made invited
+    // Members/Users create a second workspace of their own.
+    router.push('/dashboard')
   }
 
   async function handleResend() {
@@ -72,14 +75,14 @@ export default function Verify() {
   return (
     <>
       <Head>
-        <title>Verify your email — Loopback</title>
+        <title>Verify your email — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
 
       <div className="auth-wrap">
         <div className="auth-card">
-          <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
+          <div className="auth-logo"><div className="auth-logo-dot" />Ticktology</div>
           <h1 className="auth-title">Check your email</h1>
           <p className="auth-sub">
             We sent a 6-digit code to <strong style={{ color: 'var(--text)' }}>{email || 'your email'}</strong>.

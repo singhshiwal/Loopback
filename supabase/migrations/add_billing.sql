@@ -1,4 +1,4 @@
--- Loopback billing schema
+-- Ticktology billing schema
 -- Run this in the Supabase SQL editor (or via `supabase db push` if you use the CLI).
 -- Provider-agnostic: works with the mock provider now, and with Razorpay/Stripe/
 -- Lemon Squeezy later without changing the shape.

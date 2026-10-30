@@ -17,33 +17,53 @@ export default function Login() {
     if (!email || !password) { setError('Email and password are required.'); return }
     setLoading(true)
 
-    const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password })
+    const cleanEmail = email.trim().toLowerCase()
+    const { error: loginError } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
 
     if (loginError) {
+      // Account was created but the signup code was never entered.
+      if (/not confirmed/i.test(loginError.message || '')) {
+        await supabase.auth.resend({ type: 'signup', email: cleanEmail })
+        sessionStorage.setItem('lb_pending_email', cleanEmail)
+        router.push('/verify')
+        return
+      }
       setError(loginError.message || 'Invalid email or password.')
       setLoading(false)
       return
     }
 
-    // Send OTP for second factor
-    
-    sessionStorage.setItem('lb_pending_email', email)
-    router.push('/dashboard')
+    // Password is correct. Second factor: drop this password session and
+    // email a 6-digit code; the session is only created once the code is
+    // verified on /verify-login.
+    await supabase.auth.signOut()
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: cleanEmail,
+      options: { shouldCreateUser: false },
+    })
+    if (otpError) {
+      setError(otpError.message || 'Could not send the sign-in code. Please try again in a minute.')
+      setLoading(false)
+      return
+    }
+
+    sessionStorage.setItem('lb_pending_email', cleanEmail)
+    router.push('/verify-login')
   }
 
   return (
     <>
       <Head>
-        <title>Sign in — Loopback</title>
+        <title>Sign in — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
 
       <div className="auth-wrap">
         <div className="auth-card">
-          <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
+          <div className="auth-logo"><div className="auth-logo-dot" />Ticktology</div>
           <h1 className="auth-title">Welcome back</h1>
-          <p className="auth-sub">Sign in to your Loopback workspace.</p>
+          <p className="auth-sub">Sign in to your Ticktology workspace.</p>
 
           {error && <div className="msg msg-error">{error}</div>}
 

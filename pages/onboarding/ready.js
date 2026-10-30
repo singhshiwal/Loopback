@@ -18,7 +18,7 @@ export default function OnboardingReady() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-loopback-secret': process.env.NEXT_PUBLIC_CRON_SECRET || '',
+            'x-ticktology-secret': process.env.NEXT_PUBLIC_CRON_SECRET || '',
           },
           body: JSON.stringify({ workspace_id: workspaceId }),
         })
@@ -35,7 +35,7 @@ export default function OnboardingReady() {
   return (
     <>
       <Head>
-        <title>You are all set — Loopback</title>
+        <title>You are all set — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
@@ -83,7 +83,7 @@ export default function OnboardingReady() {
               <div className="ready-icon">🎉</div>
               <h1 className="ready-title">You are all set.</h1>
               <p className="ready-sub">
-                Loopback is now connected to your support tool. Your first digest has been triggered —
+                Ticktology is now connected to your support tool. Your first digest has been triggered —
                 check your Slack and email. Every Monday at 8 AM, your digest will arrive automatically.
               </p>
 

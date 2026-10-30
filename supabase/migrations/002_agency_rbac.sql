@@ -1,4 +1,4 @@
--- Loopback RBAC / multi-tenancy migration
+-- Ticktology RBAC / multi-tenancy migration
 -- Implements the 10-step plan using the existing `workspaces` table as the
 -- tenant boundary ("agency"). Adds membership, roles, RLS, and a redacted
 -- view for the User role. Run this in the Supabase SQL editor.

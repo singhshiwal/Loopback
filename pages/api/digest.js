@@ -6,7 +6,7 @@ import { getPlan } from '../../lib/plans'
 // Cron calls this with a shared secret. Manual "Run digest now" clicks
 // authenticate with the user's own Supabase session instead.
 function isCronRequest(req) {
-  const secret = req.headers['x-loopback-secret']
+  const secret = req.headers['x-ticktology-secret'] || req.headers['x-loopback-secret']
   return Boolean(process.env.CRON_SECRET) && secret === process.env.CRON_SECRET
 }
 
@@ -139,7 +139,7 @@ export default async function handler(req, res) {
           blocks: [
             {
               type: 'header',
-              text: { type: 'plain_text', text: 'Loopback Weekly Digest', emoji: true },
+              text: { type: 'plain_text', text: 'Ticktology Weekly Digest', emoji: true },
             },
             {
               type: 'section',

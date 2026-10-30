@@ -87,13 +87,13 @@ export default function OnboardingCompany() {
   return (
     <>
       <Head>
-        <title>Set up your workspace — Loopback</title>
+        <title>Set up your workspace — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
       <div className="auth-wrap">
         <div className="auth-card">
-          <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
+          <div className="auth-logo"><div className="auth-logo-dot" />Ticktology</div>
           <div className="progress-bar-wrap">
             <div className="progress-step done" />
             <div className="progress-step active" />

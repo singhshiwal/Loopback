@@ -82,13 +82,13 @@ export default function Members() {
 
   return (
     <>
-      <Head><title>Members — Loopback</title></Head>
+      <Head><title>Members — Ticktology</title></Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
       <div className="dash-layout">
         <div className="dash-sidebar">
           <div className="dash-logo">
             <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--blue)', boxShadow:'0 0 8px var(--blue)' }} />
-            Loopback
+            Ticktology
           </div>
           <a href="/dashboard" className="dash-nav-item">📊 &nbsp;Digests</a>
           <a href="/dashboard/members" className="dash-nav-item active">👥 &nbsp;Members</a>
