@@ -244,9 +244,10 @@ export const globalCSS = `
   .dash-nav-item.active { color: var(--blue); border-left-color: var(--blue); background: var(--blue-glow); }
   .dash-main {
     margin-left: 220px;
-    flex: 0 0 44px;
-    padding: 32px;
-    max-width: 900px;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: calc(100% - 220px);
+    padding: 32px 40px;
   }
   .dash-header {
     margin-bottom: 28px;
