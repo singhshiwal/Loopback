@@ -18,12 +18,12 @@ export default function Signup() {
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
     setLoading(true)
 
+    const cleanEmail = email.trim().toLowerCase()
     const { data: signupData, error: signupError } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
       options: {
-        emailRedirectTo: undefined,
-        data: { signed_up_from: 'loopback' }
+        data: { signed_up_from: 'ticktology' }
       }
     })
 
@@ -33,45 +33,30 @@ export default function Signup() {
       return
     }
 
-    sessionStorage.setItem('lb_pending_email', email)
+    sessionStorage.setItem('lb_pending_email', cleanEmail)
 
-    // Step 4: no self-serve signup into a workspace. If an Owner already
-    // invited this email, link it to the new auth user and skip straight to
-    // the dashboard instead of "create a workspace" onboarding.
-    const userId = signupData?.user?.id
-    if (userId) {
-      const { data: pendingInvite } = await supabase
-        .from('workspace_members')
-        .select('id')
-        .eq('email', email.toLowerCase().trim())
-        .is('user_id', null)
-        .limit(1)
-        .maybeSingle()
-
-      if (pendingInvite) {
-        await supabase
-          .from('workspace_members')
-          .update({ user_id: userId, accepted_at: new Date().toISOString() })
-          .eq('id', pendingInvite.id)
-
-        router.push('/dashboard')
-        return
-      }
+    // With "Confirm email" on, signUp returns no session: the user must enter
+    // the 6-digit code first. (This redirect was missing, so /verify was never
+    // reached and the account stayed unconfirmed.) Invite linking now happens
+    // server-side after verification, see /api/accept-invite + dashboard.
+    if (!signupData?.session) {
+      router.push('/verify')
+      return
     }
 
-    router.push('/onboarding/company')
+    router.push('/dashboard')
   }
 
   return (
     <>
       <Head>
-        <title>Sign up — Loopback</title>
+        <title>Sign up — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
       <div className="auth-wrap">
         <div className="auth-card">
-          <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
+          <div className="auth-logo"><div className="auth-logo-dot" />Ticktology</div>
           <h1 className="auth-title">Create your account</h1>
           <p className="auth-sub">Start turning your support tickets into product intelligence.</p>
           {error && <div className="msg msg-error">{error}</div>}

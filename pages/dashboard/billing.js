@@ -103,7 +103,7 @@ export default function Billing() {
   return (
     <>
       <Head>
-        <title>Billing — Loopback</title>
+        <title>Billing — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
@@ -111,7 +111,7 @@ export default function Billing() {
         <div className="dash-sidebar">
           <div className="dash-logo">
             <div style={{ width:8,height:8,borderRadius:'50%',background:'var(--blue)',boxShadow:'0 0 8px var(--blue)' }} />
-            Loopback
+            Ticktology
           </div>
           <a href="/dashboard" className="dash-nav-item">📊 &nbsp;Digests</a>
           <a href="/dashboard/settings" className="dash-nav-item">⚙️ &nbsp;Settings</a>

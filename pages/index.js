@@ -152,8 +152,8 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Loopback — Stop guessing what your customers want.</title>
-        <meta name="description" content="Loopback reads your support tickets every week and delivers a three-point product intelligence digest to Slack and email." />
+        <title>Ticktology — Stop guessing what your customers want.</title>
+        <meta name="description" content="Ticktology reads your support tickets every week and delivers a three-point product intelligence digest to Slack and email." />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -163,7 +163,7 @@ export default function Home() {
 
       {/* NAV */}
       <nav>
-        <a href="/" className="nav-logo"><div className="nav-dot"></div>Loopback</a>
+        <a href="/" className="nav-logo"><div className="nav-dot"></div>Ticktology</a>
         <div className="nav-right">
           <a href="/login" className="nav-signin">Sign in</a>
           <a href="/signup" className="nav-cta">Get started free</a>
@@ -175,7 +175,7 @@ export default function Home() {
         <div className="hero-left">
           <div className="eyebrow"><div className="eyebrow-dot"></div>Now in private beta · Aug 17 launch</div>
           <h1>Stop guessing what your customers want.<br /><em>Your tickets already know.</em></h1>
-          <p className="hero-sub">Loopback reads your support tickets every week and delivers a three-point product intelligence digest to Slack and email — automatically. No dashboards. No analysts. No taxonomy.</p>
+          <p className="hero-sub">Ticktology reads your support tickets every week and delivers a three-point product intelligence digest to Slack and email — automatically. No dashboards. No analysts. No taxonomy.</p>
           <div className="hero-ctas">
             <a href="/signup" className="btn-primary">Start free →</a>
             <a href="/login" className="btn-secondary">Sign in</a>
@@ -188,7 +188,7 @@ export default function Home() {
           <div className="dc-header">
             <div className="dc-header-l">
               <div className="dc-slack">💬</div>
-              <div><div className="dc-title">Loopback Weekly Digest</div><div className="dc-time">Mon 8:04 AM · #product-insights</div></div>
+              <div><div className="dc-title">Ticktology Weekly Digest</div><div className="dc-time">Mon 8:04 AM · #product-insights</div></div>
             </div>
             <span className="dc-live">LIVE</span>
           </div>
@@ -219,7 +219,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="dc-foot"><span>Loopback · 187 tickets analysed</span><a href="/signup" className="dc-link">Get this for your team →</a></div>
+          <div className="dc-foot"><span>Ticktology · 187 tickets analysed</span><a href="/signup" className="dc-link">Get this for your team →</a></div>
         </div>
       </section>
 
@@ -229,7 +229,7 @@ export default function Home() {
         <h2 className="sec-title">From your support tickets to insights in three steps.</h2>
         <p className="sec-sub">Your support lead sets it up once. Your PM gets value every Monday. Zero overlap required.</p>
         <div className="steps">
-          <div className="step"><div className="step-n">01</div><div className="step-icon">🔌</div><h3>Connect your support tool</h3><p>Connect Freshdesk, Zendesk, Intercom, or upload a CSV. Loopback pulls your tickets and syncs every 24 hours.</p></div>
+          <div className="step"><div className="step-n">01</div><div className="step-icon">🔌</div><h3>Connect your support tool</h3><p>Connect Freshdesk, Zendesk, Intercom, or upload a CSV. Ticktology pulls your tickets and syncs every 24 hours.</p></div>
           <div className="step"><div className="step-n">02</div><div className="step-icon">🧠</div><h3>AI synthesises signal</h3><p>Every week, Claude reads every ticket and identifies the top pain point, top feature request, and one churn signal — with counts and real quotes.</p></div>
           <div className="step"><div className="step-n">03</div><div className="step-icon">📩</div><h3>Digest lands in Slack</h3><p>Every Monday at 8 AM your digest arrives before sprint planning. No login required. Three bullets. Better decisions.</p></div>
         </div>
@@ -239,10 +239,10 @@ export default function Home() {
       <div className="vs-wrap">
         <div className="vs-inner">
           <div className="sec-label">Before vs After</div>
-          <h2 className="sec-title">What changes when you use Loopback</h2>
+          <h2 className="sec-title">What changes when you use Ticktology</h2>
           <div className="vs-grid">
             <div>
-              <div className="vs-col-title bef">✕ &nbsp;Without Loopback</div>
+              <div className="vs-col-title bef">✕ &nbsp;Without Ticktology</div>
               <div className="vs-item bad"><span>•&nbsp;</span><span>PM reads tickets manually for 4+ hours before every sprint</span></div>
               <div className="vs-item bad"><span>•&nbsp;</span><span>Support writes a 3-hour Friday summary nobody reads</span></div>
               <div className="vs-item bad"><span>•&nbsp;</span><span>Roadmap driven by gut feel or whoever shouted loudest</span></div>
@@ -250,7 +250,7 @@ export default function Home() {
               <div className="vs-item bad"><span>•&nbsp;</span><span>Enterpret or Productboard: $36K/year, needs a dedicated analyst</span></div>
             </div>
             <div>
-              <div className="vs-col-title aft">✓ &nbsp;With Loopback</div>
+              <div className="vs-col-title aft">✓ &nbsp;With Ticktology</div>
               <div className="vs-item good"><span style={{color:'var(--green)'}}>•&nbsp;</span><span>Monday digest in Slack before standup. Zero PM effort.</span></div>
               <div className="vs-item good"><span style={{color:'var(--green)'}}>•&nbsp;</span><span>Support lead sets it up once. Fully automated from that point.</span></div>
               <div className="vs-item good"><span style={{color:'var(--green)'}}>•&nbsp;</span><span>Every sprint priority backed by real ticket counts and quotes</span></div>
@@ -259,7 +259,7 @@ export default function Home() {
             </div>
           </div>
           <div className="price-strip">
-            <div className="price-cell"><div className="pc-lbl">Loopback Starter</div><div className="pc-val hi">$49/mo</div><div className="pc-note">Self-serve</div></div>
+            <div className="price-cell"><div className="pc-lbl">Ticktology Starter</div><div className="pc-val hi">$49/mo</div><div className="pc-note">Self-serve</div></div>
             <div className="price-cell"><div className="pc-lbl">Canny</div><div className="pc-val">$400/mo</div><div className="pc-note">Voting portals</div></div>
             <div className="price-cell"><div className="pc-lbl">UserVoice</div><div className="pc-val">$899/mo</div><div className="pc-note">Needs sales call</div></div>
             <div className="price-cell"><div className="pc-lbl">Enterpret</div><div className="pc-val">$36K/yr</div><div className="pc-note">Enterprise only</div></div>
@@ -278,7 +278,7 @@ export default function Home() {
             <div className="plan-name">Free</div>
             <div className="plan-price">$0<span>/mo</span></div>
             <div className="plan-cycle">Forever free · Pilot only</div>
-            <div className="plan-tagline">Try Loopback with your own ticket data before committing.</div>
+            <div className="plan-tagline">Try Ticktology with your own ticket data before committing.</div>
             <div className="plan-features">
               <div className="pf on"><span className="pf-check">✓</span><span>CSV upload (any platform)</span></div>
               <div className="pf on"><span className="pf-check">✓</span><span>Last 7 days of tickets</span></div>
@@ -356,7 +356,7 @@ export default function Home() {
       {/* FOOTER */}
       <div className="footer-wrap">
         <div className="footer-inner">
-          <div className="footer-logo"><div className="nav-dot" style={{width:'6px',height:'6px'}}></div>Loopback</div>
+          <div className="footer-logo"><div className="nav-dot" style={{width:'6px',height:'6px'}}></div>Ticktology</div>
           <div>Built in India · Targeting US &amp; Canada</div>
           <div className="footer-links"><a href="mailto:singhshiwal@gmail.com">Contact</a><a href="#">Privacy</a></div>
         </div>

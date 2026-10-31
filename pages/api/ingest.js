@@ -3,8 +3,10 @@ import { getPlan } from '../../lib/plans'
 
 // Simple auth check
 function isAuthorised(req) {
-  const secret = req.headers['x-loopback-secret']
-  return secret === process.env.CRON_SECRET
+  // Previously `secret === process.env.CRON_SECRET` was true when BOTH were
+  // undefined, i.e. an unset CRON_SECRET left this endpoint open to anyone.
+  const secret = req.headers['x-ticktology-secret'] || req.headers['x-loopback-secret']
+  return Boolean(process.env.CRON_SECRET) && secret === process.env.CRON_SECRET
 }
 
 /**
@@ -100,7 +102,7 @@ export default async function handler(req, res) {
     // newest-first (order_type=desc), so this keeps the most recent tickets.
     const cappedTickets = freshdeskTickets.slice(0, plan.ticketsPerRun)
 
-    // 3. Map to Loopback schema
+    // 3. Map to Ticktology schema
     const ticketsToInsert = cappedTickets.map(t => ({
       workspace_id,
       external_id: String(t.id),

@@ -40,15 +40,31 @@ export default function Dashboard() {
       setUserEmail(session.user.email)
 
       // Step 7/8: every workspace this user belongs to, with their role in each
-      const { data: memberships } = await supabase
-        .from('workspace_members')
-        .select('role, workspace_id, workspaces(*)')
-        .eq('user_id', session.user.id)
-        .not('accepted_at', 'is', null)
+      async function fetchWorkspaces() {
+        const { data: memberships } = await supabase
+          .from('workspace_members')
+          .select('role, workspace_id, workspaces(*)')
+          .eq('user_id', session.user.id)
+          .not('accepted_at', 'is', null)
+        return (memberships || [])
+          .filter(m => m.workspaces)
+          .map(m => ({ ...m.workspaces, _role: m.role }))
+      }
 
-      const workspaces = (memberships || [])
-        .filter(m => m.workspaces)
-        .map(m => ({ ...m.workspaces, _role: m.role }))
+      let workspaces = await fetchWorkspaces()
+
+      // No workspace yet: the user may have been invited. Link any pending
+      // invite for their verified email (server-side, RLS can't do it), retry.
+      if (workspaces.length === 0) {
+        try {
+          const r = await fetch('/api/accept-invite', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          })
+          const j = await r.json()
+          if (j.linked > 0) workspaces = await fetchWorkspaces()
+        } catch (e) { console.error('accept-invite failed:', e) }
+      }
 
       if (workspaces.length === 0) { router.push('/onboarding/company'); return }
 
@@ -198,7 +214,7 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Dashboard — Loopback</title>
+        <title>Dashboard — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS + extraCSS }} />
@@ -208,7 +224,7 @@ export default function Dashboard() {
         <div className="dash-sidebar">
           <div className="dash-logo">
             <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--blue)', boxShadow:'0 0 8px var(--blue)' }} />
-            Loopback
+            Ticktology
           </div>
           <a href="/dashboard" className="dash-nav-item active">📊 &nbsp;Digests</a>
           <a href="/dashboard/tickets" className="dash-nav-item">🎫 &nbsp;Tickets</a>

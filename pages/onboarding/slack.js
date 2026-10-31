@@ -47,7 +47,7 @@ export default function OnboardingSlack() {
   return (
     <>
       <Head>
-        <title>Connect Slack — Loopback</title>
+        <title>Connect Slack — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
@@ -68,7 +68,7 @@ export default function OnboardingSlack() {
 
       <div className="auth-wrap">
         <div className="auth-card" style={{ maxWidth: '480px' }}>
-          <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
+          <div className="auth-logo"><div className="auth-logo-dot" />Ticktology</div>
 
           <div className="progress-bar-wrap">
             <div className="progress-step done" />
@@ -87,7 +87,7 @@ export default function OnboardingSlack() {
           <div className="slack-steps">
             {[
               'Go to api.slack.com/apps → Create New App → From scratch',
-              'Name it "Loopback" → select your workspace → Create App',
+              'Name it "Ticktology" → select your workspace → Create App',
               'Click "Incoming Webhooks" → toggle On → Add New Webhook to Workspace',
               'Select the channel (e.g. #product-insights) → Allow',
               'Copy the webhook URL and paste it below',

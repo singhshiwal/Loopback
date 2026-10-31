@@ -59,14 +59,14 @@ export default function VerifyLogin() {
   return (
     <>
       <Head>
-        <title>Verify sign in — Loopback</title>
+        <title>Verify sign in — Ticktology</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
       </Head>
       <style dangerouslySetInnerHTML={{ __html: globalCSS }} />
 
       <div className="auth-wrap">
         <div className="auth-card">
-          <div className="auth-logo"><div className="auth-logo-dot" />Loopback</div>
+          <div className="auth-logo"><div className="auth-logo-dot" />Ticktology</div>
           <h1 className="auth-title">Check your email</h1>
           <p className="auth-sub">
             We sent a 6-digit sign-in code to <strong style={{ color: 'var(--text)' }}>{email}</strong>.

@@ -85,7 +85,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await sendInviteEmail(email, workspace?.name || 'a Loopback workspace', role, user.email)
+    await sendInviteEmail(email, workspace?.name || 'a Ticktology workspace', role, user.email)
   } catch (e) {
     console.error('Invite email failed (membership row still created):', e)
   }
